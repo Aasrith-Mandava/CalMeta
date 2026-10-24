@@ -1,0 +1,15 @@
+node_modules/
+.DS_Store
+*.log
+*.tsbuildinfo
+
+# env — commit .env.example, never .env
+.env
+.env.*
+!.env.example
+
+# local SQLite database (recreate with `npm run db:reset`)
+apps/api/*.db
+apps/api/*.db-journal
+apps/api/*.db-wal
+apps/api/*.db-shm

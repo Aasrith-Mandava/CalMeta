@@ -1,0 +1,22 @@
+{
+  "name": "200-hours",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "api": "npm run dev -w @200h/api",
+    "mobile": "npm run start -w @200h/mobile",
+    "db:reset": "npm run db:reset -w @200h/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  }
+}

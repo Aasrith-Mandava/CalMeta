@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "200 Hours",
+    "slug": "two-hundred-hours",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "twohundredhours",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.twohundredhours.app"
+    },
+    "android": {
+      "package": "com.twohundredhours.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#ECE9FE",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#5B4CF0",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 76
+        }
+      ],
+      [
+        "react-native-nfc-manager",
+        {
+          "nfcPermission": "200 Hours uses NFC so you can tap phones to swap profiles with someone you just met."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
