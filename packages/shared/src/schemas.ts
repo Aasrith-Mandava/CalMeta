@@ -99,6 +99,11 @@ export const ExtractInterestsResult = z.object({
 });
 export type ExtractInterestsResult = z.infer<typeof ExtractInterestsResult>;
 
+export const InterestSuggestion = ExtractInterestsResult.extend({
+  source: z.enum(['ai', 'fallback']),
+});
+export type InterestSuggestion = z.infer<typeof InterestSuggestion>;
+
 export const CrewSuggestion = z.object({
   crew: CrewSummary,
   members: z.array(PublicProfile),

@@ -28,6 +28,13 @@
     "plugins": [
       "expo-router",
       [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "200 Hours uses your microphone to hear your interests and free time.",
+          "speechRecognitionPermission": "200 Hours turns your speech into text you can review before suggesting tags."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#5B4CF0",
