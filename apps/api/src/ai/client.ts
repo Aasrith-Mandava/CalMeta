@@ -1,11 +1,10 @@
 import { z } from 'zod';
 
-// Muse Spark over an OpenAI-compatible Chat Completions endpoint. Defaults target
-// Eden AI's hosted Muse Spark; point MUSE_BASE_URL / MUSE_MODEL at another provider
-// (e.g. Together or Fireworks for `muse-spark-open`) without touching code.
+// Muse Spark over Meta's OpenAI-compatible Chat Completions endpoint.
+// MUSE_BASE_URL / MUSE_MODEL can point at another compatible provider.
 
 const API_KEY = process.env.MUSE_API_KEY;
-const BASE_URL = (process.env.MUSE_BASE_URL || 'https://api.edenai.run/v3').replace(/\/$/, '');
+const BASE_URL = (process.env.MUSE_BASE_URL || 'https://api.meta.ai/v1').replace(/\/$/, '');
 export const MODEL = process.env.MUSE_MODEL || 'muse-spark-1.3';
 const TIMEOUT_MS = 20_000;
 

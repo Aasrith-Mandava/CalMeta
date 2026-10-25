@@ -21,6 +21,7 @@ On the first screen, tap **Dev: continue as Alex** to use the seeded account (52
 
 Optional:
 - **AI:** `cp apps/api/.env.example apps/api/.env` and set `MUSE_API_KEY`. Without it every AI feature uses a template fallback, so the app still works.
+- **Voice onboarding:** speak, review the transcript, then tap **Suggest my tags**. Mobile needs a development build; web needs a speech-enabled browser on localhost or HTTPS. Recognition may use the platform's speech service; only reviewed text reaches our API. Typing works everywhere, and suggestions indicate when the keyword fallback was used.
 - **NFC:** needs a development build on a real phone: `cd apps/mobile && npx expo run:ios --device` (or `run:android`). Expo Go, simulators, and web fall back to typing a 6-letter code.
 - **Phone on Wi-Fi:** the app finds the API at the IP of the machine running Metro. Override with `EXPO_PUBLIC_API_URL` in `apps/mobile/.env`.
 
@@ -69,7 +70,6 @@ Each screen file starts with a comment naming its wireframe number.
 ## Known gaps (good next tasks)
 
 - **Auth** is a stub (`x-user-id` header). Anyone can act as anyone.
-- **Voice input** on screen 1: the mic sends typed text to the AI; wire up speech-to-text.
 - **Phone-to-phone NFC** works by writing to a tag; Android host card emulation would make two phones tap directly (see ARCHITECTURE).
 - **Check-ins** aren't verified (time/place), so hours can be faked.
 - **1:1 DMs, push notifications, per-city time zones, realtime chat** (chat polls every 4s).

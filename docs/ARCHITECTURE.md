@@ -54,7 +54,9 @@ Every AI call goes through one function, `generate()` in [ai/client.ts](../apps/
 | Plan ideas posted as a poll | 5 | `planPoll` | no |
 | Level-up nudge ("12 hours with Sam… invite Sam to food after") | 6 | `nextStep` | per 5 hours of progress |
 
-**Provider config** (`apps/api/.env`): `MUSE_API_KEY`, `MUSE_BASE_URL` (default Eden AI's hosted Muse Spark, `https://api.edenai.run/v3`), `MUSE_MODEL` (default `muse-spark-1.3`). We couldn't find official Meta API docs for Muse Spark; when you get first-party access, point these at it. Any OpenAI-compatible host works (e.g. Together or Fireworks for the open-weights `muse-spark-open`). The response parsing assumes the standard `choices[0].message.content` shape, so check it with your first real key.
+**Provider config** (`apps/api/.env`): `MUSE_API_KEY`, `MUSE_BASE_URL` (default `https://api.meta.ai/v1`), `MUSE_MODEL` (default `muse-spark-1.3`). Get a key from the [Meta Model API dashboard](https://dev.meta.ai/). See the [official quickstart](https://dev.meta.ai/docs/quickstart). Compatible providers can override the base URL and model.
+
+**Voice onboarding:** `expo-speech-recognition` uses native iOS/Android speech recognition or Web Speech Recognition. The user starts and stops the mic, reviews an editable transcript, then taps **Suggest my tags** to call `/ai/interests`. Only text reaches our backend. Recording stops after at most 60 seconds and is aborted when leaving the screen. Mobile requires a development build with microphone/speech permissions; Expo Go and unsupported browsers keep the typed path. Recognition may contact the platform's speech service. The API validates up to 2,000 characters and returns `source: ai | fallback` with the tags. Muse Spark interprets the transcript; it does not transcribe audio in this flow. Meta currently [notes degraded audio support for Spark 1.3](https://dev.meta.ai/docs/video-understanding).
 
 ## NFC profile exchange
 
