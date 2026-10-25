@@ -1,58 +1,50 @@
 import { parseConnectUrl } from '@200h/shared';
-import NfcManager, { Ndef, NfcTech } from 'react-native-nfc-manager';
 
-// NFC profile exchange. Needs a development build on a real phone
-// (`npx expo run:ios` / `run:android`); Expo Go and simulators have no NFC.
-//
-// What works where:
-//   • Reading tags: iPhone 7+ and most Android phones.
-//   • Writing tags (NFC stickers/cards): iPhone and Android.
-//   • A phone acting *as* a tag (true phone-to-phone): Android only, via host card
-//     emulation. Not wired up yet; see docs/ARCHITECTURE.md.
-//
-// A tag only ever carries a short-lived connect URL, never profile data.
-
+// Load the native library only when probing support. Importing the connect screen
+// must remain safe in Expo Go, which does not include this native module.
+type NfcLibrary = typeof import('react-native-nfc-manager');
+let library: NfcLibrary | undefined;
 let ready: Promise<boolean> | undefined;
-
-/** False in Expo Go, simulators, and phones without NFC; callers fall back to typing the code. */
 export function nfcAvailable(): Promise<boolean> {
   ready ??= (async () => {
     try {
-      if (!(await NfcManager.isSupported())) return false;
-      await NfcManager.start();
+      library = await import('react-native-nfc-manager');
+      if (!(await library.default.isSupported())) return false;
+      await library.default.start();
       return true;
-    } catch {
-      return false;
-    }
+    } catch { return false; }
   })();
   return ready;
 }
-
-/** Write a connect URL to the tag held against the phone. */
-export async function writeConnectTag(url: string): Promise<void> {
-  try {
-    await NfcManager.requestTechnology(NfcTech.Ndef, { alertMessage: 'Hold your phone near the NFC tag' });
-    await NfcManager.ndefHandler.writeNdefMessage(Ndef.encodeMessage([Ndef.uriRecord(url)]));
-  } finally {
-    await NfcManager.cancelTechnologyRequest().catch(() => {});
-  }
+async function requireNfc(): Promise<NfcLibrary> {
+  if (!(await nfcAvailable()) || !library) throw new Error('NFC is unavailable. Use the invitation code instead.');
+  if (!(await library.default.isEnabled())) throw new Error('Turn on NFC in Settings, then try again.');
+  return library;
 }
-
-/** Scan a tag and return its connect code, or null if it isn't a 200 Hours tag. */
-export async function readConnectCode(): Promise<string | null> {
+export async function writeConnectTag(url: string): Promise<void> {
+  if (!parseConnectUrl(url)) throw new Error('Invalid invitation URL');
+  const { default: manager, Ndef, NfcTech } = await requireNfc();
   try {
-    await NfcManager.requestTechnology(NfcTech.Ndef, { alertMessage: 'Hold your phone near their tag' });
-    const tag = await NfcManager.getTag();
+    await manager.requestTechnology(NfcTech.Ndef, { alertMessage: 'Hold your phone near the invitation card or sticker' });
+    const encoded = Ndef.encodeMessage([Ndef.uriRecord(url)]);
+    if (!encoded) throw new Error('Could not encode this invitation');
+    await manager.ndefHandler.writeNdefMessage(encoded);
+  } finally { await manager.cancelTechnologyRequest().catch(() => {}); }
+}
+export async function readConnectCode(): Promise<string | null> {
+  const { default: manager, Ndef, NfcTech } = await requireNfc();
+  try {
+    await manager.requestTechnology(NfcTech.Ndef, { alertMessage: 'Hold your phone near the invitation tag' });
+    const tag = await manager.getTag();
     for (const record of tag?.ndefMessage ?? []) {
-      const code = parseConnectUrl(Ndef.uri.decodePayload(Uint8Array.from(record.payload)));
-      if (code) return code;
+      const isUri = record.tnf === Ndef.TNF_WELL_KNOWN && (typeof record.type === 'string' ? record.type === 'U' : record.type.length === 1 && record.type[0] === 0x55);
+      if (!isUri) continue;
+      try {
+        const code = parseConnectUrl(Ndef.uri.decodePayload(Uint8Array.from(record.payload)));
+        if (code) return code;
+      } catch { /* A malformed record must not prevent scanning the next record. */ }
     }
     return null;
-  } finally {
-    await NfcManager.cancelTechnologyRequest().catch(() => {});
-  }
+  } finally { await manager.cancelTechnologyRequest().catch(() => {}); }
 }
-
-export function cancelNfc(): void {
-  NfcManager.cancelTechnologyRequest().catch(() => {});
-}
+export function cancelNfc(): void { library?.default.cancelTechnologyRequest().catch(() => {}); }

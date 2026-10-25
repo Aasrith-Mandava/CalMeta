@@ -33,9 +33,9 @@ All tables live in [apps/api/src/db/schema.ts](../apps/api/src/db/schema.ts). ID
 
 ## Friendship hours
 
-Hours between two people = the summed duration of every session **both** checked in to ([domain/hours.ts](../apps/api/src/domain/hours.ts)). Milestones follow Hall (2018): 50h casual friend, 90h friend, 200h close friend ([packages/shared/src/hours.ts](../packages/shared/src/hours.ts)). The ring on Home fills as hours / next milestone.
+Hours between two people = the summed duration of every session **both** checked in to, plus each mutually completed First 20 ([domain/hours.ts](../apps/api/src/domain/hours.ts)). Milestones follow Hall (2018): 50h casual friend, 90h friend, 200h close friend ([packages/shared/src/hours.ts](../packages/shared/src/hours.ts)). The ring on Home fills as hours / next milestone.
 
-Next sources to add: logged 1:1 hangouts ("food after climbing") and verified check-ins (time window plus location or an NFC tap at the venue).
+First 20 adds server-timed, mutually confirmed 1:1 hangouts. A next step is verified check-ins (time window plus location or an NFC tap at the venue).
 
 ## Matching
 
@@ -54,39 +54,21 @@ Every AI call goes through one function, `generate()` in [ai/client.ts](../apps/
 | Plan ideas posted as a poll | 5 | `planPoll` | no |
 | Level-up nudge ("12 hours with Sam… invite Sam to food after") | 6 | `nextStep` | per 5 hours of progress |
 
-**Provider config** (`apps/api/.env`): `MUSE_API_KEY`, `MUSE_BASE_URL` (default `https://api.meta.ai/v1`), `MUSE_MODEL` (default `muse-spark-1.3`). Get a key from the [Meta Model API dashboard](https://dev.meta.ai/). See the [official quickstart](https://dev.meta.ai/docs/quickstart). Compatible providers can override the base URL and model.
+**Provider config** (`apps/api/.env`): `MODEL_API_KEY` (`MUSE_API_KEY` is a legacy alias), `MUSE_BASE_URL` (default `https://api.meta.ai/v1`), `MUSE_MODEL` (default `muse-spark-1.3`). Defaults follow [Meta Model API documentation](https://dev.meta.ai/docs/protocols/chat-completions). Compatible providers can be configured explicitly. First 20 conversation ideas use this same client, with a saved AI/template source label.
 
 **Voice onboarding:** `expo-speech-recognition` uses native iOS/Android speech recognition or Web Speech Recognition. The user starts and stops the mic, reviews an editable transcript, then taps **Suggest my tags** to call `/ai/interests`. Only text reaches our backend. Recording stops after at most 60 seconds and is aborted when leaving the screen. Mobile requires a development build with microphone/speech permissions; Expo Go and unsupported browsers keep the typed path. Recognition may contact the platform's speech service. The API validates up to 2,000 characters and returns `source: ai | fallback` with the tags. Muse Spark interprets the transcript; it does not transcribe audio in this flow. Meta currently [notes degraded audio support for Spark 1.3](https://dev.meta.ai/docs/video-understanding).
 
-## NFC profile exchange
+## First Chapter / NFC and iPhone bump
 
-A tag never carries profile data, only `twohundredhours://connect/<CODE>`. Codes are 6 characters, live for 10 minutes, and are redeemed server-side, which then creates a `connection`.
+See [FIRST_CHAPTER.md](FIRST_CHAPTER.md) for the implemented flow, two-phone setup, demo script, and device-validation limits.
 
-```mermaid
-sequenceDiagram
-  participant A as Alex's phone
-  participant API
-  participant T as NFC tag
-  participant B as Sam's phone
-  A->>API: POST /connect/code
-  API-->>A: { code: K7P2QX, url }
-  A->>T: write NDEF URI record
-  B->>T: tap / scan
-  B->>API: POST /connect/redeem { code }
-  API-->>B: Alex's profile (connection created)
-```
+`tap_moments` stores the host, guest, single-use invitation code, saved conversation activity/source, server start/expiry times, and both completion receipts. The connection is created only when the host accepts the guest. Friendship hours combine checked-in crew sessions and completed First 20 moments. Cancelled, expired, pending, or singly confirmed moments earn no time.
 
-**What works where** (worth re-checking against current OS docs):
+The iOS local Expo module uses MultipeerConnectivity and Core Motion; it does not use NFC or UWB. NFC cards carry only a short-lived `twohundredhours://connect/CODE` invitation. Code entry uses the same server flow. Opening a link previews the invitation without claiming it; unsigned users retain the code through onboarding.
 
-| | iPhone | Android |
-| --- | --- | --- |
-| Read a tag | ✓ (iPhone 7+) | ✓ |
-| Write a tag | ✓ | ✓ |
-| Phone acts *as* a tag (true phone-to-phone) | ✗ for normal apps: Apple's card-emulation API needs a special entitlement | ✓ via host card emulation (HCE), not wired up yet |
+New endpoints: `GET /connect/current`, `GET /connect/code/:code` (host only), `GET /connect/preview/:code`, `GET /connect/moments/:id`, and `POST /connect/moments/:id` with `{action: "start" | "confirm" | "cancel"}`. `POST /connect/redeem` now returns a `TapMoment` rather than creating a connection immediately.
 
-So the dependable demo is: **share** = write your code to a cheap NFC sticker or card (or show the code), **receive** = scan it. Stretch goal: Android HCE (e.g. `react-native-hce`) so an Android phone can be tapped directly. Typing the code works everywhere, including Expo Go and web.
-
-NFC needs a development build (`npx expo run:ios --device` / `run:android`); the config plugin in `apps/mobile/app.json` adds the iOS permission string and entitlement.
+Local libsql transactions are queued to prevent concurrent async transactions colliding on the shared write connection. Unique invitation claims and all state transitions are transactional.
 
 ## API
 

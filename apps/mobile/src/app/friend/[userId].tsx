@@ -1,4 +1,4 @@
-import { INTEREST_LABELS, LEVEL_LABELS, formatWeekly, type FriendProfile } from '@200h/shared';
+import { INTEREST_LABELS, LEVEL_LABELS, formatTogether, formatWeekly, type FriendProfile } from '@200h/shared';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
@@ -15,7 +15,7 @@ export default function FriendProfileScreen() {
   const query = useApi<FriendProfile>(`/friends/${userId}`);
 
   if (!query.data) return <QueryState query={query} />;
-  const { user, progress, sharedInterests, sharedCrews, nextStep } = query.data;
+  const { user, progress, sharedInterests, sharedCrews, nextStep, firstTwenty } = query.data;
   const firstCrew = sharedCrews[0];
   const toNext = progress.nextThreshold === null ? null : Math.ceil(progress.nextThreshold - progress.hours);
 
@@ -44,7 +44,7 @@ export default function FriendProfileScreen() {
 
       <Card dark>
         <Row style={styles.hours}>
-          <FriendRing name={user.name} progress={progress.progress} center={`${Math.round(progress.hours)}h`} size={72} onDark />
+          <FriendRing name={user.name} progress={progress.progress} center={formatTogether(progress.hours)} size={72} onDark />
           <View style={styles.fill}>
             <Heading onDark>{LEVEL_LABELS[progress.level]}</Heading>
             {toNext !== null ? (
@@ -69,6 +69,14 @@ export default function FriendProfileScreen() {
         <Card>
           <Body muted>{user.prompt.question}</Body>
           <Body>{user.prompt.answer}</Body>
+        </Card>
+      ) : null}
+
+      {firstTwenty ? (
+        <Card>
+          <Body muted>A CHAPTER TOGETHER · {new Date(firstTwenty.completedAt).toLocaleDateString()}</Body>
+          <Heading>{firstTwenty.title}</Heading>
+          <Body>{firstTwenty.minutes} minutes, confirmed by you both.</Body>
         </Card>
       ) : null}
 

@@ -8,7 +8,7 @@ import {
   type PublicProfile,
   type Slot,
 } from '@200h/shared';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,6 +30,8 @@ const palette = { bg: '#F8F7FC', ink: '#211D40', muted: '#68617F', accent: '#704
 
 export default function AboutYou() {
   const { signIn } = useSession();
+  const { connectCode } = useLocalSearchParams<{ connectCode?: string }>();
+  const invitation = connectCode && /^[A-Z0-9]{4,12}$/i.test(connectCode) ? connectCode.toUpperCase() : null;
   const [name, setName] = useState('');
   const [about, setAbout] = useState('');
   const [naming, setNaming] = useState(false);
@@ -72,16 +74,16 @@ export default function AboutYou() {
       const input: OnboardingInput = { name, interests, availability };
       const me = await api<PublicProfile>('/users', { body: input });
       await signIn(me.id);
-      router.replace('/onboarding/crew');
+      router.replace(invitation ? `/connect/${invitation}` : '/onboarding/crew');
     } catch (e) {
       setError(errorMessage(e));
       setBusy(null);
     }
   }
 
-  async function continueAsDemoUser() {
-    await signIn('u_alex');
-    router.replace('/home');
+  async function continueAsDemoUser(id: string) {
+    await signIn(id);
+    router.replace(invitation ? `/connect/${invitation}` : '/home');
   }
 
   return (
@@ -168,7 +170,12 @@ export default function AboutYou() {
               {naming ? 'Find my crew' : ready ? 'Continue' : 'Pick one of each'}
             </Text>}
           </Pressable>
-          {__DEV__ && naming ? <Button variant="ghost" title="Dev: continue as Alex" onPress={continueAsDemoUser} disabled={locked} /> : null}
+          {__DEV__ && naming ? (
+            <View style={styles.chips}>
+              <Button variant="ghost" title="Dev: Alex" onPress={() => continueAsDemoUser('u_alex')} disabled={locked} />
+              <Button variant="ghost" title="Dev: Sam" onPress={() => continueAsDemoUser('u_sam')} disabled={locked} />
+            </View>
+          ) : null}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

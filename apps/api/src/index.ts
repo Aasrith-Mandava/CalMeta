@@ -41,5 +41,5 @@ app.onError((err, c) => {
 // 0.0.0.0 so phones on the same Wi-Fi can reach your laptop.
 serve({ fetch: app.fetch, port: env.port, hostname: '0.0.0.0' }, (info) => {
   console.log(`200 Hours API on http://localhost:${info.port}`);
-  console.log(aiEnabled ? `AI: ${MODEL}` : 'AI: off (set MUSE_API_KEY in apps/api/.env to enable)');
+  console.log(aiEnabled ? `AI: ${MODEL}` : 'AI: off (set MODEL_API_KEY in apps/api/.env to enable)');
 });

@@ -23,8 +23,9 @@ export default function RootLayout() {
         <Stack.Screen name="friend/[userId]" options={{ title: '' }} />
         <Stack.Screen name="crew/new" options={{ title: 'Start a crew' }} />
         <Stack.Screen name="crew/[crewId]" options={{ title: 'Crew' }} />
-        <Stack.Screen name="connect/index" options={{ title: 'Tap to connect', presentation: 'modal' }} />
+        <Stack.Screen name="connect/index" options={{ title: 'Your first chapter', presentation: 'modal' }} />
         <Stack.Screen name="connect/[code]" options={{ title: 'Connecting' }} />
+        <Stack.Screen name="moment/[id]" options={{ title: 'Your first chapter' }} />
       </Stack>
     </SessionProvider>
   );

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { levelFor, progressFor } from './hours';
+import { formatTogether, levelFor, progressFor } from './hours';
 import { connectUrl, parseConnectUrl, slotFor } from './vocab';
 
 test('levels follow the 50 / 90 / 200 hour milestones', () => {
@@ -16,6 +16,11 @@ test('ring progress is hours over the next milestone', () => {
   assert.deepEqual(progressFor(52), { hours: 52, level: 'casual', nextThreshold: 90, progress: 52 / 90 });
   assert.equal(progressFor(250).progress, 1);
   assert.equal(progressFor(250).nextThreshold, null);
+});
+
+test('a first twenty-minute hangout stays visible in friendship progress', () => {
+  assert.equal(formatTogether(progressFor(20 / 60).hours), '20m');
+  assert.equal(formatTogether(52), '52h');
 });
 
 test('crew times map to availability slots', () => {

@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 /**
  * API base URL. EXPO_PUBLIC_API_URL wins; otherwise use the machine running Metro
@@ -66,26 +66,31 @@ export interface Query<T> {
  * Deliberately tiny; swap for TanStack Query if caching needs grow.
  */
 export function useApi<T>(path: string, { pollMs }: { pollMs?: number } = {}): Query<T> {
-  const [data, setData] = useState<T>();
-  const [error, setError] = useState<Error>();
+  const [result, setResult] = useState<{ path: string; data?: T; error?: Error }>({ path });
+  const latest = useRef(0);
 
   const reload = useCallback(async () => {
+    const request = ++latest.current;
     try {
-      setData(await api<T>(path));
-      setError(undefined);
+      const data = await api<T>(path);
+      if (request === latest.current) setResult({ path, data });
     } catch (e) {
-      setError(e instanceof Error ? e : new Error(String(e)));
+      if (request === latest.current) setResult((previous) => ({
+        path,
+        data: previous.path === path ? previous.data : undefined,
+        error: e instanceof Error ? e : new Error(String(e)),
+      }));
     }
   }, [path]);
 
   useFocusEffect(
     useCallback(() => {
       reload();
-      if (!pollMs) return;
-      const id = setInterval(reload, pollMs);
-      return () => clearInterval(id);
+      const id = pollMs ? setInterval(reload, pollMs) : undefined;
+      return () => { if (id) clearInterval(id); latest.current++; };
     }, [reload, pollMs]),
   );
 
-  return { data, error, reload };
+  // A newly opened invitation must never render the previous person's preview.
+  return { data: result.path === path ? result.data : undefined, error: result.path === path ? result.error : undefined, reload };
 }

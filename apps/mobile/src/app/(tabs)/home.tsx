@@ -1,4 +1,4 @@
-import type { Home } from '@200h/shared';
+import { formatTogether, type Home, type TapMoment } from '@200h/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
@@ -13,6 +13,7 @@ import { colors, space } from '@/theme';
 
 export default function HomeScreen() {
   const query = useApi<Home>('/me/home');
+  const current = useApi<TapMoment | null>('/connect/current');
   const [checkingIn, setCheckingIn] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -43,6 +44,8 @@ export default function HomeScreen() {
         <Title>Hi, {me.name}</Title>
         <Button variant="secondary" title="Tap to connect" onPress={() => router.push('/connect')} />
       </Row>
+
+      {current.data ? <Card onPress={() => router.push(`/moment/${current.data!.id}`)}><Heading>Continue your first chapter</Heading><Body>With {current.data.other.name} · {current.data.status === 'pending' ? 'Ready to begin' : 'First 20 in progress'}</Body></Card> : null}
 
       {nextSession ? (
         <Card dark onPress={() => router.push(`/crew/${nextSession.crewId}`)}>
@@ -85,7 +88,7 @@ export default function HomeScreen() {
               key={user.id}
               name={user.name}
               progress={progress.progress}
-              label={`${Math.round(progress.hours)}h`}
+              label={formatTogether(progress.hours)}
               onPress={() => router.push(`/friend/${user.id}`)}
             />
           ))}

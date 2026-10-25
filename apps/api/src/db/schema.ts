@@ -1,5 +1,5 @@
 import type { AttendanceStatus, Interest, Slot } from '@200h/shared';
-import { index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 // Timestamps are stored as epoch milliseconds and surface as Date objects.
 const createdAt = () =>
@@ -178,3 +178,27 @@ export const connectCodes = sqliteTable('connect_codes', {
     .references(() => users.id),
   expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
 });
+
+/** A single-use invitation with consent, a server clock, and two completion receipts. */
+export const tapMoments = sqliteTable('tap_moments', {
+  id: text('id').primaryKey(),
+  code: text('code').notNull().references(() => connectCodes.code),
+  hostId: text('host_id').notNull().references(() => users.id),
+  guestId: text('guest_id').notNull().references(() => users.id),
+  status: text('status', { enum: ['pending', 'active', 'completed', 'cancelled'] }).notNull().default('pending'),
+  title: text('title').notNull(),
+  prompt: text('prompt').notNull(),
+  activitySource: text('activity_source', { enum: ['ai', 'template'] }).notNull().default('template'),
+  sharedInterests: text('shared_interests', { mode: 'json' }).$type<Interest[]>().notNull(),
+  durationMinutes: integer('duration_minutes').notNull().default(20),
+  startedAt: integer('started_at', { mode: 'timestamp_ms' }),
+  expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
+  hostConfirmedAt: integer('host_confirmed_at', { mode: 'timestamp_ms' }),
+  guestConfirmedAt: integer('guest_confirmed_at', { mode: 'timestamp_ms' }),
+  completedAt: integer('completed_at', { mode: 'timestamp_ms' }),
+  createdAt: createdAt(),
+}, (t) => [
+  uniqueIndex('tap_moments_code_idx').on(t.code),
+  index('tap_moments_host_idx').on(t.hostId, t.status),
+  index('tap_moments_guest_idx').on(t.guestId, t.status),
+]);

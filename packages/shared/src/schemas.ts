@@ -181,6 +181,8 @@ export const FriendProfile = z.object({
   sharedCrews: z.array(CrewSummary),
   /** AI nudge, e.g. "12 hours with Sam at climbing. Invite Sam to grab food after." */
   nextStep: z.string(),
+  /** Most recent mutually confirmed First 20, a shared memory on the profile. */
+  firstTwenty: z.object({ title: z.string(), completedAt: Timestamp, minutes: z.number().int() }).nullable(),
 });
 export type FriendProfile = z.infer<typeof FriendProfile>;
 
@@ -220,3 +222,44 @@ export type ConnectCode = z.infer<typeof ConnectCode>;
 export const RedeemInput = z.object({ code: z.string().trim().toUpperCase().pipe(z.string().regex(/^[A-Z0-9]{4,12}$/)) });
 export const ConnectResult = z.object({ user: PublicProfile, sharedInterests: z.array(Interest) });
 export type ConnectResult = z.infer<typeof ConnectResult>;
+
+// First 20: an NFC introduction becomes a small hangout, confirmed by both people.
+export const FIRST_TWENTY_MINUTES = 20;
+export const TapActivity = z.object({
+  title: z.string().min(1).max(80),
+  prompt: z.string().min(1).max(400),
+  source: z.enum(['ai', 'template']),
+});
+export type TapActivity = z.infer<typeof TapActivity>;
+
+export const ConnectPreview = ConnectResult.extend({
+  code: z.string(),
+  expiresAt: Timestamp,
+  activity: TapActivity,
+  momentId: z.string().nullable(),
+});
+export type ConnectPreview = z.infer<typeof ConnectPreview>;
+
+export const TapMoment = z.object({
+  id: z.string(),
+  other: PublicProfile,
+  isHost: z.boolean(),
+  status: z.enum(['pending', 'active', 'completed', 'cancelled', 'expired']),
+  activity: TapActivity,
+  sharedInterests: z.array(Interest),
+  durationMinutes: z.number().int(),
+  startedAt: Timestamp.nullable(),
+  expiresAt: Timestamp,
+  serverNow: Timestamp,
+  confirmedByMe: z.boolean(),
+  confirmedByOther: z.boolean(),
+  nextCrew: CrewSummary.nullable(),
+});
+export type TapMoment = z.infer<typeof TapMoment>;
+
+export const ConnectLobby = z.object({
+  expiresAt: Timestamp,
+  moment: TapMoment.nullable(),
+});
+export type ConnectLobby = z.infer<typeof ConnectLobby>;
+export const TapActionInput = z.object({ action: z.enum(['start', 'confirm', 'cancel']) });

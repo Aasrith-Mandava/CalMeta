@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
-// Muse Spark over Meta's OpenAI-compatible Chat Completions endpoint.
-// MUSE_BASE_URL / MUSE_MODEL can point at another compatible provider.
+// Meta Model API's Chat Completions endpoint. A compatible provider can still be
+// configured with MUSE_BASE_URL; credentials stay on the server.
 
-const API_KEY = process.env.MUSE_API_KEY;
+const API_KEY = process.env.MODEL_API_KEY || process.env.MUSE_API_KEY;
 const BASE_URL = (process.env.MUSE_BASE_URL || 'https://api.meta.ai/v1').replace(/\/$/, '');
 export const MODEL = process.env.MUSE_MODEL || 'muse-spark-1.3';
 const TIMEOUT_MS = 20_000;
@@ -27,6 +27,7 @@ export async function generate<S extends z.ZodType>(opts: {
   system: string;
   prompt: string;
   schema: S;
+  timeoutMs?: number;
 }): Promise<z.infer<S> | null> {
   if (!aiEnabled) return null;
   const jsonSchema = JSON.stringify(z.toJSONSchema(opts.schema));
@@ -34,7 +35,7 @@ export async function generate<S extends z.ZodType>(opts: {
     const res = await fetch(`${BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: { authorization: `Bearer ${API_KEY}`, 'content-type': 'application/json' },
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(opts.timeoutMs ?? TIMEOUT_MS),
       body: JSON.stringify({
         model: MODEL,
         messages: [

@@ -9,7 +9,14 @@
     "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.twohundredhours.app"
+      "bundleIdentifier": "com.twohundredhours.app",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "200 Hours finds the person you choose to bump with while both connection screens are open.",
+        "NSBonjourServices": [
+          "_hours-bump._tcp"
+        ],
+        "NSMotionUsageDescription": "200 Hours detects a shared bump when both people are ready to meet."
+      }
     },
     "android": {
       "package": "com.twohundredhours.app",
@@ -45,7 +52,7 @@
       [
         "react-native-nfc-manager",
         {
-          "nfcPermission": "200 Hours uses NFC so you can tap phones to swap profiles with someone you just met."
+          "nfcPermission": "200 Hours reads and writes invitation codes on NFC cards and stickers."
         }
       ]
     ],

@@ -1,4 +1,4 @@
-import type { Interest, Slot } from '@200h/shared';
+import { tapActivity, type Interest, type Slot } from '@200h/shared';
 
 import { nextOccurrence } from '../domain/views';
 import { db } from './client';
@@ -12,6 +12,7 @@ import {
   messages,
   polls,
   sessions,
+  tapMoments,
   users,
   votes,
 } from './schema';
@@ -65,7 +66,7 @@ const crewDefs: CrewDef[] = [
 
 async function seed() {
   // Children before parents (foreign keys).
-  for (const table of [votes, messages, polls, attendance, sessions, memberships, likes, connections, connectCodes, crews, users]) {
+  for (const table of [votes, messages, polls, attendance, sessions, memberships, likes, connections, tapMoments, connectCodes, crews, users]) {
     await db.delete(table);
   }
 
@@ -128,8 +129,18 @@ async function seed() {
     { id: 'm_7', crewId: 'c_tacos', authorId: 'u_omar', kind: 'text', text: 'Friday route: El Farolito → Taqueria Cancún → Pancho Villa?', createdAt: minutesAgo(30) },
   ]);
 
-  // A fresh NFC connection at 0 hours, so Home shows an empty ring.
+  // A completed First 20 is explicit seeded history for the short stage demo.
   await db.insert(connections).values({ userA: 'u_alex', userB: 'u_nina', source: 'nfc' });
+  const firstStart = new Date(now.getTime() - 2 * 86_400_000);
+  const firstEnd = new Date(firstStart.getTime() + 20 * 60_000);
+  const idea = tapActivity(['hiking']);
+  await db.insert(connectCodes).values({ code: 'K7P2QX', userId: 'u_alex', expiresAt: firstStart });
+  await db.insert(tapMoments).values({
+    id: 'tap_demo_nina', code: 'K7P2QX', hostId: 'u_alex', guestId: 'u_nina', status: 'completed',
+    title: idea.title, prompt: idea.prompt, activitySource: idea.source, sharedInterests: ['hiking'], durationMinutes: 20,
+    startedAt: firstStart, expiresAt: new Date(firstStart.getTime() + 86_400_000),
+    hostConfirmedAt: firstEnd, guestConfirmedAt: firstEnd, completedAt: firstEnd,
+  });
 
   console.log(`Seeded ${people.length} people and ${crewDefs.length} crews in ${CITY}. Sign in as u_alex.`);
 }

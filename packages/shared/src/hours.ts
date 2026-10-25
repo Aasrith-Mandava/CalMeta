@@ -29,9 +29,15 @@ export function nextThresholdFor(hours: number): number | null {
 export function progressFor(hours: number): Progress {
   const next = nextThresholdFor(hours);
   return {
-    hours: Math.round(hours * 10) / 10,
+    hours: Math.round(hours * 60) / 60,
     level: levelFor(hours),
     nextThreshold: next,
     progress: next === null ? 1 : Math.max(0, hours) / next,
   };
+}
+
+/** Preserve the first few minutes instead of displaying a new friendship as 0h. */
+export function formatTogether(hours: number): string {
+  if (hours < 1) return `${Math.round(hours * 60)}m`;
+  return `${Math.round(hours * 10) / 10}h`;
 }
